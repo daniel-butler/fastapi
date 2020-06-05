@@ -30,8 +30,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.get("/users/", response_model=List[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_users(db, skip=skip, limit=limit)
-    return users
+    return crud.get_users(db, skip=skip, limit=limit)
 
 
 @app.get("/users/{user_id}", response_model=schemas.User)
@@ -51,5 +50,4 @@ def create_item_for_user(
 
 @app.get("/items/", response_model=List[schemas.Item])
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    items = crud.get_items(db, skip=skip, limit=limit)
-    return items
+    return crud.get_items(db, skip=skip, limit=limit)

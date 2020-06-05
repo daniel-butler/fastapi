@@ -233,7 +233,7 @@ class APIRoute(routing.Route):
         self.path_regex, self.path_format, self.param_convertors = compile_path(path)
         if methods is None:
             methods = ["GET"]
-        self.methods = set([method.upper() for method in methods])
+        self.methods = {method.upper() for method in methods}
         self.unique_id = generate_operation_id_for_path(
             name=self.name, path=self.path_format, method=list(methods)[0]
         )
@@ -278,10 +278,7 @@ class APIRoute(routing.Route):
             self.secure_cloned_response_field = None
         self.status_code = status_code
         self.tags = tags or []
-        if dependencies:
-            self.dependencies = list(dependencies)
-        else:
-            self.dependencies = []
+        self.dependencies = list(dependencies) if dependencies else []
         self.summary = summary
         self.description = description or inspect.cleandoc(self.endpoint.__doc__ or "")
         # if a "form feed" character (page break) is found in the description text,

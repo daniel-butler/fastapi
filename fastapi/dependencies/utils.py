@@ -95,10 +95,7 @@ def get_param_sub_dependant(
     *, param: inspect.Parameter, path: str, security_scopes: List[str] = None
 ) -> Dependant:
     depends: params.Depends = param.default
-    if depends.dependency:
-        dependency = depends.dependency
-    else:
-        dependency = param.annotation
+    dependency = depends.dependency if depends.dependency else param.annotation
     return get_sub_dependant(
         depends=depends,
         dependency=dependency,
@@ -192,10 +189,7 @@ def is_scalar_field(field: ModelField) -> bool:
         and not isinstance(field_info, params.Body)
     ):
         return False
-    if field.sub_fields:
-        if not all(is_scalar_field(f) for f in field.sub_fields):
-            return False
-    return True
+    return not field.sub_fields or all(is_scalar_field(f) for f in field.sub_fields)
 
 
 def is_scalar_sequence_field(field: ModelField) -> bool:
@@ -207,9 +201,7 @@ def is_scalar_sequence_field(field: ModelField) -> bool:
                 if not is_scalar_field(sub_field):
                     return False
         return True
-    if lenient_issubclass(field.type_, sequence_types):
-        return True
-    return False
+    return bool(lenient_issubclass(field.type_, sequence_types))
 
 
 def get_typed_signature(call: Callable) -> inspect.Signature:
@@ -224,8 +216,7 @@ def get_typed_signature(call: Callable) -> inspect.Signature:
         )
         for param in signature.parameters.values()
     ]
-    typed_signature = inspect.Signature(typed_params)
-    return typed_signature
+    return inspect.Signature(typed_params)
 
 
 def get_typed_annotation(param: inspect.Parameter, globalns: Dict[str, Any]) -> Any:
@@ -280,10 +271,7 @@ def get_dependant(
             assert is_scalar_field(
                 field=param_field
             ), f"Path params must be of one of the supported types"
-            if isinstance(param.default, params.Path):
-                ignore_default = False
-            else:
-                ignore_default = True
+            ignore_default = False if isinstance(param.default, params.Path) else True
             param_field = get_param_field(
                 param=param,
                 param_name=param_name,
@@ -338,7 +326,7 @@ def get_param_field(
 ) -> ModelField:
     default_value = Required
     had_schema = False
-    if not param.default == param.empty and ignore_default is False:
+    if not (param.default == param.empty or ignore_default):
         default_value = param.default
     if isinstance(default_value, FieldInfo):
         had_schema = True
@@ -355,7 +343,7 @@ def get_param_field(
         field_info = default_field_info(default_value)
     required = default_value == Required
     annotation: Any = Any
-    if not param.annotation == param.empty:
+    if param.annotation != param.empty:
         annotation = param.annotation
     annotation = get_annotation_from_field_info(annotation, field_info, param_name)
     if not field_info.alias and getattr(field_info, "convert_underscores", None):
@@ -373,8 +361,6 @@ def get_param_field(
             class_validators={},
             field_info=field_info,
         )
-        # TODO: remove when removing support for Pydantic < 1.2.0
-        field.required = required
     else:  # pragma: nocover
         field = ModelField(  # type: ignore
             name=param.name,
@@ -386,7 +372,8 @@ def get_param_field(
             class_validators={},
             schema=field_info,
         )
-        field.required = required
+    # TODO: remove when removing support for Pydantic < 1.2.0
+    field.required = required
     if not had_schema and not is_scalar_field(field=field):
         if PYDANTIC_1:
             field.field_info = params.Body(field_info.default)
