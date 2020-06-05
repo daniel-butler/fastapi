@@ -62,10 +62,9 @@ def get_flat_models_from_routes(routes: Sequence[BaseRoute]) -> Set[Type[BaseMod
                 responses_from_routes.extend(route.response_fields.values())
             if route.callbacks:
                 callback_flat_models |= get_flat_models_from_routes(route.callbacks)
-    flat_models = callback_flat_models | get_flat_models_from_fields(
+    return callback_flat_models | get_flat_models_from_fields(
         body_fields_from_routes + responses_from_routes, known_models=set()
     )
-    return flat_models
 
 
 def get_model_definitions(

@@ -105,10 +105,8 @@ def test_get_path(path, expected_status, expected_response):
 
 
 def test_route_classes():
-    routes = {}
     r: APIRoute
-    for r in app.router.routes:
-        routes[r.path] = r
+    routes = {r.path: r for r in app.router.routes}
     assert routes["/a/"].x_type == "A"
     assert routes["/a/b/"].x_type == "B"
     assert routes["/a/b/c/"].x_type == "C"
